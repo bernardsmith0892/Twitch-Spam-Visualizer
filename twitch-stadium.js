@@ -1,5 +1,6 @@
 var DEBUG = false;
-var LITE = false; // If true, use text versions of emotes instead
+var LITE = true; // If true, use text versions of emotes instead
+var MAX_EMOTE = 4; // How many emotes per message to consider when adding
 var wss = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
 // Window Data Structures
@@ -8,7 +9,7 @@ var time_range = 10000; // Specifies the length of time to track an emote for
 var resolution = 1000; // Specifies the refresh rate. (When to empty the bucket and add it to the historical values)
 var top_length = 5; // Only output the top X used emotes
 
-// The window structures
+// Initialize the window structures
 var hist_length = Math.floor(time_range / resolution); 
 var gather_window = new Array();
 var current_sum = new Array();
@@ -63,35 +64,42 @@ function getEmoteIDs(msg){
 	 2. The `emotes` field is empty
 	*/
 	if (emote_data != null && emote_data[1].length > 0){
-		// Create a list of the emotes found
-		var emotes = emote_data[1].split('/');
-	
-		// Prints out the id number and text for each emote
-		var i;
-		var emote_id;
-		var text_pos;
-		var chat = msg.match(msg_re)[1];
-		var emote_list = [['', '', 0]]; // 0=id, 1=text, 2=value
+		try{
+			// Create a list of the emotes found
+			var emotes = emote_data[1].split('/');
 		
-		// Loops through each emote and adds its id, text, and occurrences to the list
-		for (i = 0; i < emotes.length; i++){
-			if(!emote_list[i]){
-				emote_list[i] = ['','',0]
+			// Prints out the id number and text for each emote
+			var i;
+			var emote_id;
+			var text_pos;
+			var chat = msg.match(msg_re)[1];
+			var emote_list = [['', '', 0]]; // 0=id, 1=text, 2=value
+			
+			// Loops through each emote and adds its id, text, and occurrences to the list
+			for (i = 0; i < emotes.length; i++){
+				if(!emote_list[i]){
+					emote_list[i] = ['','',0]
+				}
+				
+				// Get ID
+				emote_id = emotes[i].split(':')
+				emote_list[i][0] = emote_id[0];
+				
+				// Get text
+				text_pos = emote_id[1].split(',')[0].split('-');
+				emote_list[i][1] = chat.substring(parseInt(text_pos[0]), parseInt(text_pos[1]) + 1);
+				
+				// Get occurrences, only consider up to the MAX_EMOTE value
+				emote_list[i][2] = (emote_id[1].split(',').length < 5) ? emote_id[1].split(',').length : MAX_EMOTE;
 			}
 			
-			// Get ID
-			emote_id = emotes[i].split(':')
-			emote_list[i][0] = emote_id[0];
-			
-			// Get text
-			text_pos = emote_id[1].split(',')[0].split('-');
-			emote_list[i][1] = chat.substring(parseInt(text_pos[0]), parseInt(text_pos[1]) + 1);
-			
-			// Get occurrences
-			emote_list[i][2] = (emote_id[1].split(',').length < 5) ? emote_id[1].split(',').length : 5;
+			return emote_list;
 		}
-		
-		return emote_list;
+		catch(err){
+			console.log("Message: " + msg);
+			console.log("`emote_data` Match: " + emote_data);
+			return null;
+		}
 	}
 	else{
 		return null;
@@ -158,9 +166,11 @@ function rotateWindow(){
 	for(i = 0; i < hist_length; i++){
 		current_sum = addEmotes(hist_window[i], current_sum);
 	}
-	
+
+	// Sorts the sum list in descending mode and then prints it to the webpage
 	current_sum.sort(compareThirdColumn);
-	document.getElementById('demo').innerHTML = emotesArraytoString(current_sum.slice(0, top_length));
+	// document.getElementById('demo').innerHTML = emotesArraytoString(current_sum.slice(0, top_length));
+	updateChart(current_sum.slice(0, top_length));
 }
 
 // Converts an array of emote data into a printable string
@@ -185,4 +195,23 @@ function emotesArraytoString(emotes){
 function IDtoImage(id){
 	var scale = '1.0'
 	return 'https://static-cdn.jtvnw.net/emoticons/v1/' + id + '/' + scale;
+}
+
+// Updates dataset for the Chart.js graph
+function updateChart(emotes){
+	var i;
+	for(i = 0; i < emotes.length; i++){
+		if(emotes[i][0] != 'null'){
+			if(LITE){
+				emoteChart.data.labels[i] = emotes[i][1];
+				emoteChart.data.datasets[0].data[i] = emotes[i][2];
+			}
+			else{
+				emoteChart.data.labels[i] = '<img src="' + IDtoImage(emotes[i][0]) + '">';
+				emoteChart.data.datasets[0].data[i] = emotes[i][2];
+			}
+		}
+	}
+	
+	emoteChart.update();
 }

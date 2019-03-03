@@ -1,3 +1,65 @@
+<!DOCTYPE html>
+<html>
+<font face = "helvetica,arial">
+<body style="background-color:powderblue;">
 <script src="twitch-stadium.js"></script>
+<script src="Chart.js"></script>
 
+<center>
+<h1>Lazy Twitch Chat Viewer</h1>
 <p id="demo"></p>
+
+<canvas id="emoteChart"></canvas>
+<script>
+var ctx = document.getElementById("emoteChart").getContext('2d');
+var emoteChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: ["", "", "", "", ""],
+        datasets: [{
+            label: '# of Emotes',
+            data: [0, 0, 0, 0, 0],
+            backgroundColor: [
+                'rgba(54, 162, 235, 0.2)',
+				'rgba(54, 162, 235, 0.2)',
+                'rgba(54, 162, 235, 0.2)',
+				'rgba(54, 162, 235, 0.2)',
+				'rgba(54, 162, 235, 0.2)',
+            ],
+            borderColor: [
+                'rgba(54, 162, 235, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(54, 162, 235, 1)',
+                'rgba(54, 162, 235, 1)',
+            ],
+            borderWidth: 1
+        }]
+    },
+    options: {
+        scales: {
+			xAxes: [{
+				gridLines: {
+					display:false
+				}
+			}],
+			yAxes: [{
+				ticks: {
+					max: 100
+				},
+				gridLines: {
+					display:false
+				}   
+			}]
+        },
+		legend: {
+			display: false
+		}
+    }
+});
+</script>
+
+</center>
+
+</body>
+</html>
