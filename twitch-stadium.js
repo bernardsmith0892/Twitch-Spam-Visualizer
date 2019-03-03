@@ -1,22 +1,26 @@
-var DEBUG = false
+var DEBUG = false;
+var LITE = false; // If true, use text versions of emotes instead
 var wss = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 
-// Data Analytics Values
-var time_range = 15000;
-var resolution = 100;
-var top = 10;
-var hist_length = time_range / resolution;
-var gather_window = new Object();
-var current_sum = new Object();
+// Window Data Structures
+// 3D Arrays - [emote_id, emote_text, occurrences]
+var time_range = 10000; // Specifies the length of time to track an emote for
+var resolution = 1000; // Specifies the refresh rate. (When to empty the bucket and add it to the historical values)
+var top_length = 5; // Only output the top X used emotes
 
+// The window structures
+var hist_length = Math.floor(time_range / resolution); 
+var gather_window = new Array();
+var current_sum = new Array();
 var hist_window = new Array();
 var i;
 for(i = 0; i < hist_length; i++){
-	hist_window[i] = new Object();
+	hist_window.push([['null','null', 0]]);
 }
 
+
 // Sets rotation interval
-window.setInterval(rotate_window, resolution);
+window.setInterval(rotateWindow, resolution);
 
 // Join overwatchleague chat as an anonymous user. Random `justinfan` with a number between 0 - 999,999
 wss.onopen = function open() {
@@ -32,67 +36,17 @@ wss.onopen = function open() {
 
 // Handles receipt of a new chat message
 wss.onmessage = function(msg){
-	var emote_list = get_emote_ids(msg.data);
+	var emote_list = getEmoteIDs(msg.data);
 	if (emote_list != null){
-		gather_window = add_emotes_a2d(emote_list, gather_window);		
+		gather_window = addEmotes(emote_list, gather_window);		
 	}
 };
 
-function emotes_dict2str(window){
-	ret_str = ""
-	for(var emote in window){
-		ret_str += '<p><img src="' + id_to_image(emote) + '">: ' + window[emote] + '</p>';
-	}
-	
-	return ret_str;
-}
-
-function emotes_arr2str(emotes){
-	ret_str = ""
-	var i;
-	for(i = 0; i < emotes.length; i++){
-		if(emotes[i][0] != 'null'){
-			ret_str += '<p><img src="' + id_to_image(emotes[i][0]) + '">: ' + emotes[i][1] + '</p>';
-		}
-	}
-	
-	return ret_str;
-}
-
-function window_to_toparray(wind, num_top){
-	var max = ['null', 0]
-	var top_emotes = new Array();
-	
-	var i;
-	for(i = 0; i < 10; i++){
-		for(var emote in wind){
-			if(wind[emote] > max[1] && !contains(top_emotes, emote)){
-				max = [emote, wind[emote]];
-			}
-		}
-		
-		top_emotes[i] = max;
-		max = ['null', 0]
-	}
-	
-	return top_emotes;
-}
-
-function contains(arr, str){
-	var i;
-	for(i = 0; i < arr.length; i++){
-		if(arr[i][0] == str){
-			return true;
-		}
-	}
-	
-	return false;
-}
-
 // Grabs id numbers for all emotes in this message
-function get_emote_ids(msg){
+function getEmoteIDs(msg){
 	// Regex to grab the `emotes` field
 	var emote_re = /emotes=([0-9:\-,\/]*)/;
+	var msg_re = /PRIVMSG \#overwatchleague :(.*)/
 	
 	if (DEBUG == true){
 		console.log("Message: " + msg);
@@ -112,13 +66,29 @@ function get_emote_ids(msg){
 		// Create a list of the emotes found
 		var emotes = emote_data[1].split('/');
 	
-		// Prints out the id number for each emote
+		// Prints out the id number and text for each emote
 		var i;
 		var emote_id;
-		var emote_list = [""];
+		var text_pos;
+		var chat = msg.match(msg_re)[1];
+		var emote_list = [['', '', 0]]; // 0=id, 1=text, 2=value
+		
+		// Loops through each emote and adds its id, text, and occurrences to the list
 		for (i = 0; i < emotes.length; i++){
+			if(!emote_list[i]){
+				emote_list[i] = ['','',0]
+			}
+			
+			// Get ID
 			emote_id = emotes[i].split(':')
-			emote_list[i] = emote_id[0];
+			emote_list[i][0] = emote_id[0];
+			
+			// Get text
+			text_pos = emote_id[1].split(',')[0].split('-');
+			emote_list[i][1] = chat.substring(parseInt(text_pos[0]), parseInt(text_pos[1]) + 1);
+			
+			// Get occurrences
+			emote_list[i][2] = (emote_id[1].split(',').length < 5) ? emote_id[1].split(',').length : 5;
 		}
 		
 		return emote_list;
@@ -128,41 +98,49 @@ function get_emote_ids(msg){
 	}
 }
 
-// Increments or adds each emote in this window (Array to Dictionary)
-function add_emotes_a2d(emote_list, window){
+// Increments or adds each emote in this window
+function addEmotes(from_arr, to_arr){
 	var i;
-	for (i = 0; i < emote_list.length; i++){
-		// If the window has this emote then increment its value
-		if(window[emote_list[i]] != null){
-			window[emote_list[i]]++;
+	var location;
+	for (i = 0; i < from_arr.length; i++){
+		// If the window doesn't have this emote set its value
+		location = contains(to_arr, from_arr[i][0])
+		if(location === -1){
+			to_arr[to_arr.length] = from_arr[i].slice();
 		}
-		// If it doesn't, then add it and set its value to 1
+		// If it does, then add its value
 		else{
-			window[emote_list[i]] = 1;
+			to_arr[location][2] = to_arr[location][2] + from_arr[i][2];
 		}
 	}
-	
-	return window;
+	return to_arr;
 }
 
-// Increments or adds each emote in this window (Dictionary to Dictionary)
-function add_emotes_d2d(from_window, to_window){
-	for(var emote in from_window){
-		// If the window has this emote then increment its value
-		if(to_window[emote] != null){
-			to_window[emote]++;
-		}
-		// If it doesn't, then add it and set its value to 1
-		else{
-			to_window[emote] = 1;
+// Searches `arr` for an element with `str` as it's 0th index.
+// Returns its index if true, -1 if false
+function contains(arr, str){
+	var i;
+	for(i = 0; i < arr.length; i++){
+		if(arr[i][0] === str){
+			return i;
 		}
 	}
 	
-	return to_window;
+	return -1;
+}
+
+// Returns comparison for the third column of a and b
+function compareThirdColumn(a, b){
+	if(a[2] === b[2]) {
+		return 0;
+	}
+	else {
+		return (a[2] < b[2]) ? 1 : -1;
+	}
 }
 
 // Rotates the emote window forward
-function rotate_window(){
+function rotateWindow(){
 	// Moves the windows down an index and removes the oldest one	
 	var i;
 	for(i = 1; i < hist_length; i++){
@@ -172,19 +150,39 @@ function rotate_window(){
 	hist_window[hist_length - 1] = gather_window;
 	
 	// Clears the both temporary windows
-	gather_window = new Object();
-	current_sum = new Object();
+	gather_window = [];
+	current_sum = [];
 	
 	// Sums up the emote values from the historical window
+	var i;
 	for(i = 0; i < hist_length; i++){
-		current_sum = add_emotes_d2d(hist_window[i], current_sum);
+		current_sum = addEmotes(hist_window[i], current_sum);
 	}
 	
-	document.getElementById('demo').innerHTML = emotes_arr2str(window_to_toparray(current_sum, top));
+	current_sum.sort(compareThirdColumn);
+	document.getElementById('demo').innerHTML = emotesArraytoString(current_sum.slice(0, top_length));
+}
+
+// Converts an array of emote data into a printable string
+function emotesArraytoString(emotes){
+	ret_str = ""
+	var i;
+	for(i = 0; i < emotes.length; i++){
+		if(emotes[i][0] != 'null'){
+			if(LITE){
+				ret_str += '<p><b>"' + emotes[i][1] + '</b>": ' + emotes[i][2] + '</p>';
+			}
+			else{
+				ret_str += '<p><img src="' + IDtoImage(emotes[i][0]) + '">: ' + emotes[i][2] + '</p>';
+			}
+		}
+	}
+	
+	return ret_str;
 }
 
 // Returns the full image link for an emote id
-function id_to_image(id){
+function IDtoImage(id){
 	var scale = '1.0'
 	return 'https://static-cdn.jtvnw.net/emoticons/v1/' + id + '/' + scale;
 }
