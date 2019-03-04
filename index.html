@@ -33,10 +33,10 @@ input  { display: table-cell; }
 button { display: table-cell; margin:5px;}
 </style>
 
-<!-- Chart Resources -->
-<script src="https://www.amcharts.com/lib/4/core.js"></script>
-<script src="https://www.amcharts.com/lib/4/charts.js"></script>
-<!-- <script src="https://www.amcharts.com/lib/4/themes/animated.js"></script> -->
+<!-- amChart Resources -->
+<script src="core.js"></script>
+<script src="charts.js"></script>
+<!-- ***************** -->
 <script src="twitch-stadium.js"></script>
 
 <center>
@@ -48,7 +48,10 @@ button { display: table-cell; margin:5px;}
 <div class='box'>
 	<iframe style="width: 100%; height: 90%;" frameborder="0" scrolling="yes" id="twitch_chat" src="https://www.twitch.tv/embed/overwatchleague/chat"> </iframe>
 </div>
+<!-- ************************ -->
 
+
+<!-- User Input Forms -->
 <p>
 <form method="GET" action="index.html">
 	<p>
@@ -75,10 +78,6 @@ button { display: table-cell; margin:5px;}
 
 <!-- Chart code -->
 <script>
-// Themes begin
-// am4core.useTheme(am4themes_animated);
-// Themes end
-
 // Create chart instance
 var chart = am4core.create("chartdiv", am4charts.XYChart);
 
