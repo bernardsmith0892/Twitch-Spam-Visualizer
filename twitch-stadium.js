@@ -1,13 +1,32 @@
 var DEBUG = false;
-var LITE = true; // If true, use text versions of emotes instead
+var LITE = false; // If true, use text versions of emotes instead
 var MAX_EMOTE = 4; // How many emotes per message to consider when adding
+var DEFAULT_MAX = 100; // What to set the highest value to as a default
 var wss = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
+var channel = (getParameter('channel') == null) ? 'overwatchleague' : getParameter('channel');
 
 // Window Data Structures
 // 3D Arrays - [emote_id, emote_text, occurrences]
-var time_range = 10000; // Specifies the length of time to track an emote for
-var resolution = 1000; // Specifies the refresh rate. (When to empty the bucket and add it to the historical values)
+var time_range = 20000; // Specifies the length of time, in milliseconds, to track an emote for
+var resolution = 1000; // Specifies the refresh rate, in milliseconds. (When to empty the bucket and add it to the historical values)
 var top_length = 5; // Only output the top X used emotes
+
+// Return the value of GET parameter 'param'
+function getParameter(param){
+	var params = window.location.search.substr(1);
+	params = params.split('&');
+	
+	if (params.length > 0){
+		var i;
+		for(i = 0; i < params.length; i++){
+			if(param === params[i].split('=')[0]){
+				return params[i].split('=')[1];
+			}
+		}
+	}
+	
+	return null;
+}
 
 // Initialize the window structures
 var hist_length = Math.floor(time_range / resolution); 
@@ -19,27 +38,61 @@ for(i = 0; i < hist_length; i++){
 	hist_window.push([['null','null', 0]]);
 }
 
-
 // Sets rotation interval
 window.setInterval(rotateWindow, resolution);
+
+function changeRefreshInterval(){
+	// Update values
+	time_range = document.getElementById("time_range").value;
+	resolution = document.getElementById("refresh_rate").value;
+	
+	console.log("Updating values to: " + time_range + ", " + resolution);
+
+	// Reinitialize windows
+	hist_length = Math.floor(time_range / resolution); 
+	gather_window = new Array();
+	current_sum = new Array();
+	hist_window = new Array();
+	var i;
+	for(i = 0; i < hist_length; i++){
+		hist_window.push([['null','null', 0]]);
+	}
+	
+	// Sets rotation interval
+	window.setInterval(rotateWindow, resolution);
+}
 
 // Join overwatchleague chat as an anonymous user. Random `justinfan` with a number between 0 - 999,999
 wss.onopen = function open() {
 	var nick = 'justinfan' + Math.floor(Math.random() * 10000000);
-	var channel = 'overwatchleague';
-
+	
 	console.log('Joining #' + channel + ' with the nickname ' + nick)
 	
 	wss.send('CAP REQ :twitch.tv/tags twitch.tv/commands');
 	wss.send('NICK ' + nick);
 	wss.send('JOIN #' + channel);
+	
+	// Set the iframe's address to the proper chatroom
+	twitch_chat.src = "https://www.twitch.tv/embed/" + channel + "/chat";
 };
 
 // Handles receipt of a new chat message
 wss.onmessage = function(msg){
-	var emote_list = getEmoteIDs(msg.data);
-	if (emote_list != null){
-		gather_window = addEmotes(emote_list, gather_window);		
+	// Replies to PING messages from the chatroom
+	if(msg.data.includes('PING :tmi.twitch.tv')){
+		console.log(msg.data);
+		wss.send("PONG :tmi.twitch.tv");
+	}
+	// Gathers emotes from chat messages
+	else if(msg.data.includes('PRIVMSG')){
+		var emote_list = getEmoteIDs(msg.data);
+		if (emote_list != null){
+			gather_window = addEmotes(emote_list, gather_window);		
+		}
+	}
+	// Outputs all other messages to the console
+	else if(DEBUG){
+		console.log(msg.data);
 	}
 };
 
@@ -47,16 +100,16 @@ wss.onmessage = function(msg){
 function getEmoteIDs(msg){
 	// Regex to grab the `emotes` field
 	var emote_re = /emotes=([0-9:\-,\/]*)/;
-	var msg_re = /PRIVMSG \#overwatchleague :(.*)/
+	var msg_re = /PRIVMSG \#[a-zA-Z0-9]* :(.*)/
+	
+	// Grab the `emotes` field
+	var emote_data = msg.match(emote_re);
 	
 	if (DEBUG == true){
 		console.log("Message: " + msg);
 		console.log("`emote_data` Match: " + emote_data);
 	}
-	
-	// Grab the `emotes` field
-	var emote_data = msg.match(emote_re);
-	
+		
 	/* 
 	 Stops routine if:
 	 1. We didn't find the `emotes` field
@@ -96,6 +149,7 @@ function getEmoteIDs(msg){
 			return emote_list;
 		}
 		catch(err){
+			console.log(err);
 			console.log("Message: " + msg);
 			console.log("`emote_data` Match: " + emote_data);
 			return null;
@@ -197,21 +251,27 @@ function IDtoImage(id){
 	return 'https://static-cdn.jtvnw.net/emoticons/v1/' + id + '/' + scale;
 }
 
-// Updates dataset for the Chart.js graph
+// Updates dataset of and resizes (if needed) the amchart graph
 function updateChart(emotes){
+	var data_fits = true;
+	var max = DEFAULT_MAX;
 	var i;
+	
+	// Loop through the given emote list and adds their data to the graph. Skip 'null' emotes
 	for(i = 0; i < emotes.length; i++){
 		if(emotes[i][0] != 'null'){
-			if(LITE){
-				emoteChart.data.labels[i] = emotes[i][1];
-				emoteChart.data.datasets[0].data[i] = emotes[i][2];
+			// Do not draw the images if in 'lite' mode
+			if(!LITE){
+				chart.data[i].bullet = IDtoImage(emotes[i][0]);
 			}
-			else{
-				emoteChart.data.labels[i] = '<img src="' + IDtoImage(emotes[i][0]) + '">';
-				emoteChart.data.datasets[0].data[i] = emotes[i][2];
+			chart.data[i].name = emotes[i][1];
+			chart.data[i].value = emotes[i][2];
+			if(chart.data[i].value >= max){
+				max = chart.data[i].value + 10;
 			}
 		}
 	}
 	
-	emoteChart.update();
+	valueAxis.max = max;	
+	chart.invalidateData();
 }
