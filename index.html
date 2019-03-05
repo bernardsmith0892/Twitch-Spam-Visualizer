@@ -1,47 +1,39 @@
 <!DOCTYPE html>
 <html>
 <font face = "helvetica,arial">
-<body style="background-color:powderblue;">
 
 <!-- Styles -->
-<style>
-html, body {
-        height: 100%;
-        margin: 0px;
-}
-
-#chartdiv {
-  width: 70%;
-  height: 80%;
-}
-
-.box{
-    float:left;
-    margin-right:10px;
-	height: 85%;
-	width: 28%;
-    margin: 0px;
-}
-.clear{
-    clear:both;
-}
-
-form   { display: table;  border-spacing: 5px;}
-p      { display: table-row;  }
-label  { display: table-cell; }
-input  { display: table-cell; }
-button { display: table-cell; margin:5px;}
-</style>
+<head>
+<link rel="stylesheet" type="text/css" href="twitch-stadium.css">
+</head>
 
 <!-- amChart Resources -->
-<script src="core.js"></script>
-<script src="charts.js"></script>
-<!-- ***************** -->
-<script src="twitch-stadium.js"></script>
+<script type = "text/javascript" src="core.js"></script>
+<script type = "text/javascript" src="charts.js"></script>
 
+<!-- Project Script -->
+<script type = "text/javascript" src="twitch-stadium.js"></script>
+
+
+<!-- Webpage Code -->
+<body>
 <center>
-<h1>Simplified Twitch Chat</h1>
+<table style="border-spacing: 10px; width: 100%">
+	<tr>
+		<td align="center">
+			<h1>
+				Simplified Twitch Chat 
+			</h1>
+		</td>
+		<td>
+			<div class="box" style="float: right;">
+				<a class="button" href="#popup1">Settings</a>
+			</div>
+		</td>
+	</tr>
+</table>
 </center>
+
 <div class='box' id="chartdiv"></div>
 
 <!-- Embedded Twitch Chat Box -->
@@ -50,110 +42,47 @@ button { display: table-cell; margin:5px;}
 </div>
 <!-- ************************ -->
 
+<!-- Emote Chart Script -->
+<script type = "text/javascript" src="emote-chart.js"></script>
+<!-- ****************** -->
 
-<!-- User Input Forms -->
-<p>
-<form method="GET" action="index.html">
-	<p>
-		<label for="channel">Channel: </label>
-		<input type="text" name="channel" value="overwatchleague" />
-		<input style="margin:5px;" type="submit" name="submit" value="Change Channel" />
-	</p>
-</form>
-</p>
+<!-- Settings Change Popup -->
+<div id="popup1" class="overlay">
+	<div class="popup">
+		<h2>Settings</h2>
+		<a class="close" href="#">&times;</a>
+		<div class="content">
+			<p>
+				<form method="GET" action="index.html">
+					<p>
+						<label for="channel">Channel: </label>
+						<input type="text" id="channel_form" name="channel" value="overwatchleague" />
+						<label for="mode">Mode: </label>
+						<select id="mode_dropdown" name="mode">
+							<option value="decay">Point Decay</option>
+							<option value="window">Sliding Window</option>
+						</select>
+						<input style="margin:5px;" type="submit" value="Change Settings"/>
+					</p>
+				</form>
+			</p>
 
-<table style="border-spacing: 5px;">
-	<p>
-		<label for="time_range">Time Range (ms): </label>
-		<input type="text" id="time_range" value="20000">
-	</p>
-	<p>
-		<label for="refresh_rate">Refresh Rate (ms): </label>
-		<input type="text" id="refresh_rate" value="1000">
-		<button onclick="changeRefreshInterval()">Update Values</button>
-	</p>
-</table>
+			<table style="border-spacing: 5px;">
+				<p>
+					<label for="time_range">Time Range (ms): </label>
+					<input type="text" id="time_range" value="20000">
+				</p>
+				<p>
+					<label for="refresh_rate">Refresh Rate (ms): </label>
+					<input type="text" id="refresh_rate" value="1000">
+					<button onclick="changeRefreshInterval()">Update</button>
+				</p>
+			</table>
+		</div>
+	</div>
+</div>
+
 
 </body>
-
-<!-- Chart code -->
-<script>
-// Create chart instance
-var chart = am4core.create("chartdiv", am4charts.XYChart);
-
-// Add data
-chart.data = [{
-    "name": "",
-    "value": 0,
-    "color": chart.colors.next(),
-    "bullet": ""
-}, {
-    "name": "",
-    "value": 0,
-    "color": chart.colors.next(),
-    "bullet": ""
-}, {
-    "name": "",
-    "value": 0,
-    "color": chart.colors.next(),
-    "bullet": ""
-}, {
-    "name": "",
-    "value": 0,
-    "color": chart.colors.next(),
-    "bullet": ""
-},{
-    "name": "",
-    "value": 0,
-    "color": chart.colors.next(),
-    "bullet": ""
-}];
-
-// Create axes
-var categoryAxis = chart.xAxes.push(new am4charts.CategoryAxis());
-categoryAxis.dataFields.category = "name";
-categoryAxis.renderer.grid.template.disabled = true;
-categoryAxis.renderer.minGridDistance = 30;
-categoryAxis.renderer.inside = false;
-categoryAxis.renderer.labels.template.fill = am4core.color("#000");
-categoryAxis.renderer.labels.template.fontSize = 12;
-
-var valueAxis = chart.yAxes.push(new am4charts.ValueAxis());
-valueAxis.renderer.grid.template.strokeDasharray = "4,4";
-valueAxis.renderer.labels.template.disabled = false;
-valueAxis.min = 0;
-valueAxis.max = DEFAULT_MAX;
-
-// Do not crop bullets
-chart.maskBullets = false;
-
-// Remove padding
-chart.paddingBottom = 0;
-
-// Create series
-var series = chart.series.push(new am4charts.ColumnSeries());
-series.dataFields.valueY = "value";
-series.dataFields.categoryX = "name";
-series.columns.template.propertyFields.fill = "color";
-series.columns.template.propertyFields.stroke = "color";
-series.columns.template.column.cornerRadiusTopLeft = 15;
-series.columns.template.column.cornerRadiusTopRight = 15;
-series.columns.template.tooltipText = "{categoryX}: [bold]{valueY}[/b]";
-
-
-// Add bullets
-var bullet = series.bullets.push(new am4charts.Bullet());
-var image = bullet.createChild(am4core.Image);
-image.horizontalCenter = "middle";
-image.verticalCenter = "bottom";
-image.dy = 20;
-image.y = am4core.percent(100);
-image.propertyFields.href = "bullet";
-image.tooltipText = series.columns.template.tooltipText;
-image.propertyFields.fill = "color";
-image.filters.push(new am4core.DropShadowFilter());
-
-chart.tapToActivate = false;
-</script>
 
 </html>

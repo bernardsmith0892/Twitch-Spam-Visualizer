@@ -1,14 +1,14 @@
 var DEBUG = false;
-var DECAY_MODE = true;
 var LITE = false; // If true, use text versions of emotes instead
 var MAX_EMOTE = 4; // How many emotes per message to consider when adding
 var DEFAULT_MAX = (DECAY_MODE) ? 10 : 50; // What to set the highest value to as a default
 var wss = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
-var channel = (getParameter('channel') == null) ? 'overwatchleague' : getParameter('channel');
+var DECAY_MODE = (getParameter('mode') === 'decay' || getParameter('mode') === null) ? true : false;
+var channel = (getParameter('channel') === null) ? 'overwatchleague' : getParameter('channel');
 
 // Window Data Structures
 // 3D Arrays - [emote_id, emote_text, occurrences]
-var resolution = (DECAY_MODE) ? 100 : 1000; // Specifies the refresh rate, in milliseconds
+var resolution = (DECAY_MODE) ? 250 : 1000; // Specifies the refresh rate, in milliseconds
 var top_length = 5; // Only output the top X used emotes
 
 // Return the value of GET parameter 'param'
@@ -85,6 +85,8 @@ wss.onopen = function open() {
 	
 	// Set the iframe's address to the proper chatroom
 	twitch_chat.src = "https://www.twitch.tv/embed/" + channel + "/chat";
+	mode_dropdown.value = (DECAY_MODE) ? 'decay' : 'window';
+	channel_form.value = channel;
 };
 
 // Handles receipt of a new chat message
