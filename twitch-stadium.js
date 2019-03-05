@@ -1,14 +1,14 @@
 var DEBUG = false;
+var DECAY_MODE = true;
 var LITE = false; // If true, use text versions of emotes instead
 var MAX_EMOTE = 4; // How many emotes per message to consider when adding
-var DEFAULT_MAX = 100; // What to set the highest value to as a default
+var DEFAULT_MAX = (DECAY_MODE) ? 10 : 50; // What to set the highest value to as a default
 var wss = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 var channel = (getParameter('channel') == null) ? 'overwatchleague' : getParameter('channel');
 
 // Window Data Structures
 // 3D Arrays - [emote_id, emote_text, occurrences]
-var time_range = 20000; // Specifies the length of time, in milliseconds, to track an emote for
-var resolution = 1000; // Specifies the refresh rate, in milliseconds. (When to empty the bucket and add it to the historical values)
+var resolution = (DECAY_MODE) ? 100 : 1000; // Specifies the refresh rate, in milliseconds
 var top_length = 5; // Only output the top X used emotes
 
 // Return the value of GET parameter 'param'
@@ -28,18 +28,29 @@ function getParameter(param){
 	return null;
 }
 
-// Initialize the window structures
-var hist_length = Math.floor(time_range / resolution); 
-var gather_window = new Array();
-var current_sum = new Array();
-var hist_window = new Array();
-var i;
-for(i = 0; i < hist_length; i++){
-	hist_window.push([['null','null', 0]]);
-}
 
-// Sets rotation interval
-window.setInterval(rotateWindow, resolution);
+var gather_window = new Array();
+
+if(DECAY_MODE){
+	var low_value_decay = resolution / 1000; // Keeps low value emotes (less than 1) for three seconds
+	var decay_modifier = resolution / 1000; // Slows down decay to align with changes in resolution
+	// Sets decay interval
+	window.setInterval(decayTick, resolution);
+}
+else{
+	var time_range = 20000; // Specifies the length of time, in milliseconds, to track an emote for
+	// Initialize the windowing structures
+	var hist_length = Math.floor(time_range / resolution); 
+	var current_sum = new Array();
+	var hist_window = new Array();
+	var i;
+	for(i = 0; i < hist_length; i++){
+		hist_window.push([['null','null', 0]]);
+	}
+
+	// Sets rotation interval
+	window.setInterval(rotateWindow, resolution);
+}
 
 function changeRefreshInterval(){
 	// Update values
@@ -172,7 +183,7 @@ function addEmotes(from_arr, to_arr){
 		}
 		// If it does, then add its value
 		else{
-			to_arr[location][2] = to_arr[location][2] + from_arr[i][2];
+			to_arr[location][2] += from_arr[i][2];
 		}
 	}
 	return to_arr;
@@ -227,8 +238,42 @@ function rotateWindow(){
 	updateChart(current_sum.slice(0, top_length));
 }
 
-// Converts an array of emote data into a printable string
-function emotesArraytoString(emotes){
+// Decays each emote value
+function decayTick(){
+	// console.log("Current Emotes Gathered:");
+	// console.log(emotesArraytoString(gather_window));
+	
+	// Decreases each sum value logarithmically
+	// Decreases values 1 or below by the `low_value_decay` instead
+	// Removes the value if it's 0 or below
+	var i;
+	for(i = 0; i < gather_window.length; i++){
+		if(gather_window[i][2] <= 0){
+			// console.log("Removing " + gather_window[i][1] + " with a value of " + gather_window[i][2]);
+			gather_window[i][2] = 0;
+			gather_window.splice(i, 1);
+			i--;
+		}
+		else if(gather_window[i][2] < 2){
+			// console.log("Low value decay for " + gather_window[i][1] + " from value " + gather_window[i][2] + " to " + (gather_window[i][2] - low_value_decay));
+			
+			gather_window[i][2] -= low_value_decay;
+		}
+		else{
+			// console.log("Decaying " + gather_window[i][1] + " from value " + gather_window[i][2] + " to " + (gather_window[i][2] - (Math.log(gather_window[i][2]) * decay_modifier)));
+			
+			gather_window[i][2] = gather_window[i][2] - (Math.sqrt(gather_window[i][2]) * decay_modifier);
+		}
+	}
+	
+	// Sorts the sum list in descending mode and then prints it to the webpage
+	gather_window.sort(compareThirdColumn);
+	// document.getElementById('demo').innerHTML = emotesArraytoString(gather_window.slice(0, top_length));
+	updateChart(gather_window.slice(0, top_length));
+}
+
+// Converts an array of emote data into HTML
+function emotesArraytoHTML(emotes){
 	ret_str = ""
 	var i;
 	for(i = 0; i < emotes.length; i++){
@@ -245,6 +290,19 @@ function emotesArraytoString(emotes){
 	return ret_str;
 }
 
+// Converts an array of emote data into a string
+function emotesArraytoString(emotes){
+	ret_str = ""
+	var i;
+	for(i = 0; i < emotes.length; i++){
+		if(emotes[i][0] != 'null'){
+			ret_str += emotes[i][1] + ': ' + emotes[i][2] + '; ';
+		}
+	}
+	
+	return ret_str;
+}
+
 // Returns the full image link for an emote id
 function IDtoImage(id){
 	var scale = '1.0'
@@ -253,11 +311,11 @@ function IDtoImage(id){
 
 // Updates dataset of and resizes (if needed) the amchart graph
 function updateChart(emotes){
-	var data_fits = true;
 	var max = DEFAULT_MAX;
-	var i;
 	
 	// Loop through the given emote list and adds their data to the graph. Skip 'null' emotes
+	var i;
+	// console.log(emotes.length);
 	for(i = 0; i < emotes.length; i++){
 		if(emotes[i][0] != 'null'){
 			// Do not draw the images if in 'lite' mode
@@ -272,6 +330,13 @@ function updateChart(emotes){
 		}
 	}
 	
-	valueAxis.max = max;	
+	// Clears out the rest of the chart data if there aren't enough emotes
+	for(i = emotes.length; i < chart.data.length; i++){
+			chart.data[i].name = '';
+			chart.data[i].value = 0;
+			chart.data[i].bullet = '';
+	}
+	
+	valueAxis.max = max;
 	chart.invalidateData();
 }
