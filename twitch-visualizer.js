@@ -33,7 +33,7 @@ function getParameter(param){
 var gather_window = new Array();
 
 if(DECAY_MODE){
-	var low_value_decay = resolution / 1000; // Keeps low value emotes (less than 1) for three seconds
+	var low_value_decay = resolution / 2000; // Keeps low value emotes (less than 1) for two seconds
 	var decay_modifier = resolution / 1000; // Slows down decay to align with changes in resolution
 	// Sets decay interval
 	interval = setInterval(decayTick, resolution);
@@ -60,6 +60,7 @@ function changeRefreshInterval(){
 	// Stop current redraw interval
 	clearInterval(interval);
 	
+	// Settings Update for Decay Mode
 	if(DECAY_MODE){
 		low_value_decay = resolution / 1000;
 		decay_modifier = resolution / 1000;
@@ -67,6 +68,7 @@ function changeRefreshInterval(){
 		// Sets redraw interval
 		interval = setInterval(decayTick, resolution);		
 	}
+	// Settings Update for Window Mode
 	else{
 		time_range = document.getElementById("window_range").value;
 		// Reinitialize windows
@@ -98,8 +100,11 @@ wss.onopen = function open() {
 	
 	// Set the iframe's address to the proper chatroom
 	twitch_chat.src = "https://www.twitch.tv/embed/" + channel + "/chat";
+	
+	// Corrects the values for the settings forms
 	mode_dropdown.value = (DECAY_MODE) ? 'decay' : 'window';
 	channel_form.value = channel;
+	channel_display.textContent = "Channel: " + channel;
 	refresh_rate.value = resolution;
 	if(DECAY_MODE){
 		window_range.disabled = true;
@@ -110,7 +115,6 @@ wss.onopen = function open() {
 wss.onmessage = function(msg){
 	// Replies to PING messages from the chatroom
 	if(msg.data.includes('PING :tmi.twitch.tv')){
-		console.log(msg.data);
 		wss.send("PONG :tmi.twitch.tv");
 	}
 	// Gathers emotes from chat messages
@@ -120,7 +124,7 @@ wss.onmessage = function(msg){
 			gather_window = addEmotes(emote_list, gather_window);		
 		}
 	}
-	// Outputs all other messages to the console
+	// Outputs all other messages to the console when in DEBUG mode
 	else if(DEBUG){
 		console.log(msg.data);
 	}
@@ -134,11 +138,6 @@ function getEmoteIDs(msg){
 	
 	// Grab the `emotes` field
 	var emote_data = msg.match(emote_re);
-	
-	if (DEBUG == true){
-		console.log("Message: " + msg);
-		console.log("`emote_data` Match: " + emote_data);
-	}
 		
 	/* 
 	 Stops routine if:
@@ -253,41 +252,35 @@ function rotateWindow(){
 
 	// Sorts the sum list in descending mode and then prints it to the webpage
 	current_sum.sort(compareThirdColumn);
-	// document.getElementById('demo').innerHTML = emotesArraytoString(current_sum.slice(0, top_length));
 	updateChart(current_sum.slice(0, top_length));
 }
 
 // Decays each emote value
 function decayTick(){
-	// console.log("Current Emotes Gathered:");
-	// console.log(emotesArraytoString(gather_window));
-	
-	// Decreases each sum value logarithmically
-	// Decreases values 1 or below by the `low_value_decay` instead
+	// Decreases each sum value by log base 3
+	// Switches to decreasing by 20% when under 20
+	// Switches to the `low_value_decay` when under 2
 	// Removes the value if it's 0 or below
 	var i;
 	for(i = 0; i < gather_window.length; i++){
 		if(gather_window[i][2] <= 0){
-			// console.log("Removing " + gather_window[i][1] + " with a value of " + gather_window[i][2]);
 			gather_window[i][2] = 0;
 			gather_window.splice(i, 1);
 			i--;
 		}
 		else if(gather_window[i][2] < 2){
-			// console.log("Low value decay for " + gather_window[i][1] + " from value " + gather_window[i][2] + " to " + (gather_window[i][2] - low_value_decay));
-			
 			gather_window[i][2] -= low_value_decay;
 		}
+		else if(gather_window[i][2] < 20){
+			gather_window[i][2] -= gather_window[i][2] * 0.20 * decay_modifier;
+		}
 		else{
-			// console.log("Decaying " + gather_window[i][1] + " from value " + gather_window[i][2] + " to " + (gather_window[i][2] - (Math.log(gather_window[i][2]) * decay_modifier)));
-			
-			gather_window[i][2] = gather_window[i][2] - (Math.sqrt(gather_window[i][2]) * decay_modifier);
+			gather_window[i][2] -= (Math.log(gather_window[i][2]) / Math.log(3)) * decay_modifier;
 		}
 	}
 	
 	// Sorts the sum list in descending mode and then prints it to the webpage
 	gather_window.sort(compareThirdColumn);
-	// document.getElementById('demo').innerHTML = emotesArraytoString(gather_window.slice(0, top_length));
 	updateChart(gather_window.slice(0, top_length));
 }
 

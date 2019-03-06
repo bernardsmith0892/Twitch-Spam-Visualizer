@@ -2,10 +2,11 @@
 <html>
 <font face = "helvetica,arial">
 
-<!-- CSS Includes -->
+<!-- CSS and Icon Include -->
 <head>
 <link rel="stylesheet" type="text/css" href="twitch-visualizer.css">
-<title>Twitch Spam Visualizer</title>
+ <link rel="shortcut icon" href="favicon.ico" />
+<title>Musubi Reader</title>
 </head>
 
 <!-- amChart Resources -->
@@ -19,11 +20,12 @@
 <!-- Webpage Code -->
 <body>
 
-<div class="topnav">
-	<a class="title"><b><font color=white>Twitch Spam Visualizer</font></b></a>
-	<a href="#settings">Settings</a>
-	<a href="#about">About</a>
-</div>
+<nav class="topnav">
+	<a class="title"><b>Musubi Reader</b></a>
+	<a class="title" id="channel_display">Channel: </a>
+	<a class="button" href="#settings">Settings</a>
+	<a class="button" href="#about">About</a>
+</nav>
 
 <br>
 
@@ -50,10 +52,22 @@
 		<h2>About</h2>
 		<a class="close" href="#">&times;</a>
 		<div class="content">
-			<p><b>Modes available:</b></p>
-			<p>Point Decay - Each emote received adds one point to that emote's score. The score decays overtime, with higher values decaying faster.</p>
-			<p>Sliding Window - Sums up all emotes received in the last 20 seconds. Higher memory requirement. Window length is modifiable in the settings menu.</p>
-			<p>Each mode only shows the top five emotes received.</p>
+			<p>
+				Do you enjoy Twitch chat but cannot read up to 10,000 words per minute? Use this tool to filter out that unreadable waterfall of spam and show only the most important info: the top five emotes everyone is spamming right now.
+			</p>
+			<p>
+				<b>Modes available:</b>
+				<br>
+				<u>Point Decay <font size="2">[default]</font> </u> - Each emote received adds one point to that emote's score. The score decays over time, with higher values decaying faster.
+				<br>
+				<u>Sliding Window</u> - Sums up all emotes received in the last 20 seconds. Higher memory requirement. Window length is modifiable in the settings menu.
+			</p>
+			<p>
+				If you have a rant, a rave, or need to report a bug or security vulnerability, please contact me at: <b>mail at brndjsmith dot net</b>
+			</p>
+			<p><font size="2.5">
+				Chart created using the <a href="https://www.amcharts.com/">amCharts</a> library.
+			</font></p>
 		</div>
 	</div>
 </div>
@@ -66,7 +80,7 @@
 		<h2>Settings</h2>
 		<a class="close" href="#">&times;</a>
 		<div class="content">
-			<p><u>Display Settings</u></p>
+			<p><u>Display Settings <font size="1.5">[Requires Reload]</font></u></p>
 				<form method="GET" action="index.html">
 					<table>
 						<tr>
@@ -84,7 +98,7 @@
 									<option value="window">Sliding Window</option>
 								</select>
 							</td> <td rowspan="2">
-								<input style="margin:5px;" type="submit" value="Update"/>
+								<input style="margin:5px;" type="submit" value="Switch"/>
 							</td>
 						</tr>
 					</table>

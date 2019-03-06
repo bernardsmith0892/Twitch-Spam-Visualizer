@@ -1,7 +1,7 @@
 // Create chart instance
 var chart = am4core.create("chartdiv", am4charts.XYChart);
 
-// Add data
+// Initialize data
 chart.data = [{
     "name": "",
     "value": 0,
