@@ -5,6 +5,7 @@ var DEFAULT_MAX = (DECAY_MODE) ? 10 : 50; // What to set the highest value to as
 var wss = new WebSocket('wss://irc-ws.chat.twitch.tv:443');
 var DECAY_MODE = (getParameter('mode') === 'decay' || getParameter('mode') === null) ? true : false;
 var channel = (getParameter('channel') === null) ? 'overwatchleague' : getParameter('channel');
+var interval;
 
 // Window Data Structures
 // 3D Arrays - [emote_id, emote_text, occurrences]
@@ -35,7 +36,7 @@ if(DECAY_MODE){
 	var low_value_decay = resolution / 1000; // Keeps low value emotes (less than 1) for three seconds
 	var decay_modifier = resolution / 1000; // Slows down decay to align with changes in resolution
 	// Sets decay interval
-	window.setInterval(decayTick, resolution);
+	interval = setInterval(decayTick, resolution);
 }
 else{
 	var time_range = 20000; // Specifies the length of time, in milliseconds, to track an emote for
@@ -49,28 +50,40 @@ else{
 	}
 
 	// Sets rotation interval
-	window.setInterval(rotateWindow, resolution);
+	interval = setInterval(rotateWindow, resolution);
 }
 
+// Called when user updates the collection settings
 function changeRefreshInterval(){
-	// Update values
-	time_range = document.getElementById("time_range").value;
+	// Update resolution
 	resolution = document.getElementById("refresh_rate").value;
+	// Stop current redraw interval
+	clearInterval(interval);
 	
-	console.log("Updating values to: " + time_range + ", " + resolution);
-
-	// Reinitialize windows
-	hist_length = Math.floor(time_range / resolution); 
-	gather_window = new Array();
-	current_sum = new Array();
-	hist_window = new Array();
-	var i;
-	for(i = 0; i < hist_length; i++){
-		hist_window.push([['null','null', 0]]);
+	if(DECAY_MODE){
+		low_value_decay = resolution / 1000;
+		decay_modifier = resolution / 1000;
+		
+		// Sets redraw interval
+		interval = setInterval(decayTick, resolution);		
+	}
+	else{
+		time_range = document.getElementById("window_range").value;
+		// Reinitialize windows
+		hist_length = Math.floor(time_range / resolution); 
+		gather_window = new Array();
+		current_sum = new Array();
+		hist_window = new Array();
+		var i;
+		for(i = 0; i < hist_length; i++){
+			hist_window.push([['null','null', 0]]);
+		}
+		
+		// Sets rotation interval
+		interval = setInterval(rotateWindow, resolution);
 	}
 	
-	// Sets rotation interval
-	window.setInterval(rotateWindow, resolution);
+
 }
 
 // Join overwatchleague chat as an anonymous user. Random `justinfan` with a number between 0 - 999,999
@@ -87,6 +100,10 @@ wss.onopen = function open() {
 	twitch_chat.src = "https://www.twitch.tv/embed/" + channel + "/chat";
 	mode_dropdown.value = (DECAY_MODE) ? 'decay' : 'window';
 	channel_form.value = channel;
+	refresh_rate.value = resolution;
+	if(DECAY_MODE){
+		window_range.disabled = true;
+	}
 };
 
 // Handles receipt of a new chat message

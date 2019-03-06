@@ -5,6 +5,7 @@
 <!-- Styles -->
 <head>
 <link rel="stylesheet" type="text/css" href="twitch-stadium.css">
+<title>Simplified Twitch Chat</title>
 </head>
 
 <!-- amChart Resources -->
@@ -17,22 +18,13 @@
 
 <!-- Webpage Code -->
 <body>
-<center>
-<table style="border-spacing: 10px; width: 100%">
-	<tr>
-		<td align="center">
-			<h1>
-				Simplified Twitch Chat 
-			</h1>
-		</td>
-		<td>
-			<div class="box" style="float: right;">
-				<a class="button" href="#popup1">Settings</a>
-			</div>
-		</td>
-	</tr>
-</table>
-</center>
+
+<div class="topnav">
+	<a class="title"><b><font color=white>Simplified Twitch Chat</font></b></a>
+	<a href="#popup1">Settings</a>
+</div>
+
+<br>
 
 <div class='box' id="chartdiv"></div>
 
@@ -52,31 +44,48 @@
 		<h2>Settings</h2>
 		<a class="close" href="#">&times;</a>
 		<div class="content">
-			<p>
+			<p><u>Display Settings</u></p>
 				<form method="GET" action="index.html">
-					<p>
-						<label for="channel">Channel: </label>
-						<input type="text" id="channel_form" name="channel" value="overwatchleague" />
-						<label for="mode">Mode: </label>
-						<select id="mode_dropdown" name="mode">
-							<option value="decay">Point Decay</option>
-							<option value="window">Sliding Window</option>
-						</select>
-						<input style="margin:5px;" type="submit" value="Change Settings"/>
-					</p>
+					<table>
+						<tr>
+							<td>
+								<label for="channel">Channel: </label>
+							</td> <td>
+								<input type="text" id="channel_form" name="channel" value="overwatchleague" />
+							</td> <td>
+						<tr>
+							<td>
+								<label for="mode">Mode: </label>
+							</td> <td>
+							<select id="mode_dropdown" name="mode">
+									<option value="decay">Point Decay</option>
+									<option value="window">Sliding Window</option>
+								</select>
+							</td> <td rowspan="2">
+								<input style="margin:5px;" type="submit" value="Update"/>
+							</td>
+						</tr>
+					</table>
 				</form>
-			</p>
 
-			<table style="border-spacing: 5px;">
-				<p>
-					<label for="time_range">Time Range (ms): </label>
-					<input type="text" id="time_range" value="20000">
-				</p>
-				<p>
-					<label for="refresh_rate">Refresh Rate (ms): </label>
-					<input type="text" id="refresh_rate" value="1000">
-					<button onclick="changeRefreshInterval()">Update</button>
-				</p>
+			<p><u>Collection Settings</u></p>
+			<table>		
+				<tr>
+					<td>
+						<label for="refresh_rate">Refresh Rate (ms): </label>
+					</td> <td>
+						<input type="text" id="refresh_rate" value="1000">
+					</td>
+				</tr>
+								<tr>
+					<td>
+						<label id="window_label" for="window_range">Window Range (ms): </label>
+					</td> <td>
+						<input type="text" id="window_range" value="20000">
+					</td> <td rowspan="2">
+						<button onclick="changeRefreshInterval()">Update</button>
+					</td>
+				</tr>
 			</table>
 		</div>
 	</div>
