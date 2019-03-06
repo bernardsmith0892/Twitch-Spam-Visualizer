@@ -2,7 +2,7 @@
 <html>
 <font face = "helvetica,arial">
 
-<!-- Styles -->
+<!-- CSS Includes -->
 <head>
 <link rel="stylesheet" type="text/css" href="twitch-visualizer.css">
 <title>Twitch Spam Visualizer</title>
@@ -21,25 +21,47 @@
 
 <div class="topnav">
 	<a class="title"><b><font color=white>Twitch Spam Visualizer</font></b></a>
-	<a href="#popup1">Settings</a>
+	<a href="#settings">Settings</a>
+	<a href="#about">About</a>
 </div>
 
 <br>
 
 <div class='box' id="chartdiv"></div>
 
-<!-- Embedded Twitch Chat Box -->
+<!-- **************************** -->
+<!-- * Embedded Twitch Chat Box * -->
+<!-- **************************** -->
 <div class='box'>
 	<iframe style="width: 100%; height: 90%;" frameborder="0" scrolling="yes" id="twitch_chat" src="https://www.twitch.tv/embed/overwatchleague/chat"> </iframe>
 </div>
-<!-- ************************ -->
 
-<!-- Emote Chart Script -->
+<!-- ********************** -->
+<!-- * Emote Chart Script * -->
+<!-- ********************** -->
 <script type = "text/javascript" src="emote-chart.js"></script>
-<!-- ****************** -->
 
-<!-- Settings Change Popup -->
-<div id="popup1" class="overlay">
+
+<!-- ********************
+     * About Menu Popup *
+     ******************** -->
+<div id="about" class="overlay">
+	<div class="popup">
+		<h2>About</h2>
+		<a class="close" href="#">&times;</a>
+		<div class="content">
+			<p><b>Modes available:</b></p>
+			<p>Point Decay - Each emote received adds one point to that emote's score. The score decays overtime, with higher values decaying faster.</p>
+			<p>Sliding Window - Sums up all emotes received in the last 20 seconds. Higher memory requirement. Window length is modifiable in the settings menu.</p>
+			<p>Each mode only shows the top five emotes received.</p>
+		</div>
+	</div>
+</div>
+
+<!-- ***********************
+     * Settings Menu Popup *
+     *********************** -->
+<div id="settings" class="overlay">
 	<div class="popup">
 		<h2>Settings</h2>
 		<a class="close" href="#">&times;</a>
@@ -79,7 +101,7 @@
 				</tr>
 								<tr>
 					<td>
-						<label id="window_label" for="window_range">Window Range (ms): </label>
+						<label id="window_label" for="window_range">Window Length (ms): </label>
 					</td> <td>
 						<input type="text" id="window_range" value="20000">
 					</td> <td rowspan="2">
