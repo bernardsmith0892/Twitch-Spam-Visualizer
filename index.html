@@ -58,9 +58,9 @@
 			<p>
 				<b>Modes available:</b>
 				<br>
-				<u>Point Decay <font size="2">[default]</font> </u> - Each emote received adds one point to that emote's score. The score decays over time, with higher values decaying faster.
+				<u>Sliding Window <font size="2">[default]</font> </u> - Sums up all emotes received in the last 20 seconds. Window length is modifiable in the settings menu.
 				<br>
-				<u>Sliding Window</u> - Sums up all emotes received in the last 20 seconds. Higher memory requirement. Window length is modifiable in the settings menu.
+				<u>Point Decay </u> - Each emote received adds one point to that emote's score. The score decays over time, with higher values decaying faster.
 			</p>
 			<p>
 				If you have a rant, a rave, or need to report a bug or security vulnerability, please contact me at: <b>mail at brndjsmith dot net</b>
@@ -94,8 +94,8 @@
 								<label for="mode">Mode: </label>
 							</td> <td>
 							<select id="mode_dropdown" name="mode">
-									<option value="decay">Point Decay</option>
 									<option value="window">Sliding Window</option>
+									<option value="decay">Point Decay</option>
 								</select>
 							</td> <td rowspan="2">
 								<input style="margin:5px;" type="submit" value="Switch"/>
