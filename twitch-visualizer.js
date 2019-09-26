@@ -134,7 +134,7 @@ wss.onmessage = function(msg){
 function getEmoteIDs(msg){
 	// Regex to grab the `emotes` field
 	var emote_re = /emotes=([0-9:\-,\/]*)/;
-	var msg_re = /PRIVMSG \#[a-zA-Z0-9]* :(.*)/
+	var msg_re = /PRIVMSG \#[a-zA-Z0-9_]* :(.*)/
 	
 	// Grab the `emotes` field
 	var emote_data = msg.match(emote_re);
