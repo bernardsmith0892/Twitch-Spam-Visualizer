@@ -99,7 +99,7 @@ wss.onopen = function open() {
 	wss.send('JOIN #' + channel);
 	
 	// Set the iframe's address to the proper chatroom
-	twitch_chat.src = "https://www.twitch.tv/embed/" + channel + "/chat";
+	twitch_chat.src = "https://www.twitch.tv/embed/" + channel + "/chat?parent=bernardsmith0892.github.io";
 	
 	// Corrects the values for the settings forms
 	mode_dropdown.value = (DECAY_MODE) ? 'decay' : 'window';
