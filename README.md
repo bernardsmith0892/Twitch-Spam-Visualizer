@@ -8,15 +8,15 @@ The default channel is ESL_CSGO, but you can change the channel in the settings.
 ### Screenshots
 When the Philadelphia Fusion did a C9:
 
-![Reaction to Fusion doing a C9](fusion_c9.png "OWL Fusion C9")
+![Reaction to Fusion doing a C9](fusion_C9.png "OWL Fusion C9")
 
 Going into map 5 between London Spitfire and Shanghai Dragons:
 
-![Reaction to going into a new match. London vs Shanghai](map5-2-LvS.png "OWL Fusion C9")
+![Reaction to going into a new match. London vs Shanghai](map5_LvS.png "OWL Fusion C9")
 
 Peta dissing Malik for playing on console:
 
-![Reaction to Peta dissing Malik](peta_youplayonconsole.png "OWL Fusion C9")
+![Reaction to Peta dissing Malik](peta_youplayconsole.png "OWL Fusion C9")
 
 Can you tell I made this before Overwatch League switched to Youtube?
 
