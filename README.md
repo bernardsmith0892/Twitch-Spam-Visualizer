@@ -21,14 +21,14 @@ Peta dissing Malik for playing on console:
 Can you tell I made this before Overwatch League switched to Youtube?
 
 ## FAQ
-The graph updates too slowly, can I make it faster?
+**The graph updates too slowly, can I make it faster?**
 
 *Yes. Update the refresh rate option in the Settings menu. Keep in mind, this is a pretty heavy graphing library, so fast refresh rates may bog down your computer a lot.*
 
-The channel I'm in has a slower chat so I never see more than a few emotes on the graph. What can I do?
+**The channel I'm in has a slower chat so I never see more than a few emotes on the graph. What can I do?**
 
 *You can increase the window length option in the Settings menu to maintain a longer history of emotes. This will keep emotes on the graph for longer.*
 
- What is this *Point Decay* option that I found in the Settings menu?
+**What is this *Point Decay* option that I found in the Settings menu?**
 
 *So, I made two modes for this: 'Sliding Window', which is the default, and 'Point Decay'. Sliding Window just shows a total count of each emote within the last 20 seconds (also modifiable). Point Decay is supposed to be something like, each emote has a 'health bar' that decays overtime with each emote sent adding 1 point back to its health. I couldn't really find the sweet spot in the decay rate, so it's not super great right now. As it stands, it's more of a fun addition than anything else.*
